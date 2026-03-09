@@ -4,8 +4,10 @@ Agent-agnostic persistent memory for AI assistants. Your memories live in **your
 
 Any AI that supports MCP can connect — Claude, GPT, Gemini, whatever comes next. **Your AI changes, your memory stays.**
 
-![Claude Code demo](imgs/cc.png)
-![Google Drive demo](imgs/gdrive.png)
+<p>
+  <img src="imgs/cc.png" width="49%" />
+  <img src="imgs/gdrive.png" width="49%" />
+</p>
 
 ## Install
 
