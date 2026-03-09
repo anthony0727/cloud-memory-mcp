@@ -23,7 +23,7 @@ import { GDriveAdapter } from "./storage/gdrive.js";
 import { GitHubAdapter } from "./storage/github.js";
 import type { StorageAdapter } from "./storage/base.js";
 import { createArchitecture } from "./memory/architectures/index.js";
-import { addMemory, searchMemories, getAllMemories, updateMemory, deleteMemory } from "./tools.js";
+import { addMemory, searchMemories, getRecentMemories, readBlock, writeBlock, updateMemory, deleteMemory } from "./tools.js";
 
 function hasGoogleCredentials(): boolean {
   if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) return true;
@@ -70,15 +70,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     {
       name: "add_memory",
       description:
-        "Store new information to the user's persistent cloud memory. Use this INSTEAD of writing to local memory files. Extract discrete facts from the conversation and call this tool for each one. Deduplicate: check existing memories first (get_all_memories) before adding.",
+        "Store a new memory to the user's persistent cloud storage. Each memory becomes an individual file in Google Drive. Deduplicates automatically.",
       inputSchema: {
         type: "object",
         properties: {
           content: { type: "string", description: "The information to remember (natural language)" },
-          category: {
-            type: "string",
-            description: "Optional category (work, finance, preferences, health, personal, general, context)",
-          },
         },
         required: ["content"],
       },
@@ -95,17 +91,45 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       },
     },
     {
-      name: "get_all_memories",
-      description: "Retrieve all user memories from cloud storage. Call this at conversation start to load user context. This replaces any local auto-memory system — cloud memory is the single source of truth.",
-      inputSchema: { type: "object", properties: {} },
-    },
-    {
-      name: "update_memory",
-      description: "Directly update a specific memory by its ID.",
+      name: "get_recent_memories",
+      description: "Retrieve the most recent memories. Call this at conversation start to load user context.",
       inputSchema: {
         type: "object",
         properties: {
-          id: { type: "string", description: "Memory ID (8-char hex)" },
+          limit: { type: "number", description: "Max number of memories to return (default 128)" },
+        },
+      },
+    },
+    {
+      name: "read_block",
+      description: "Read a memory block. Blocks: 'profile' (who the user is — name, job, background), 'preferences' (how the user works — coding style, tools, habits), 'context' (what the user is doing now — active projects, current threads). Load profile and context at conversation start.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          block: { type: "string", enum: ["profile", "preferences", "context"], description: "Which block to read" },
+        },
+        required: ["block"],
+      },
+    },
+    {
+      name: "write_block",
+      description: "Update a memory block. Overwrite the full block content. Blocks: 'profile' (stable identity — update when learning who the user is), 'preferences' (procedural — update when learning how user likes things done), 'context' (working memory — update when projects/tasks change).",
+      inputSchema: {
+        type: "object",
+        properties: {
+          block: { type: "string", enum: ["profile", "preferences", "context"], description: "Which block to update" },
+          content: { type: "string", description: "Full block content (markdown)" },
+        },
+        required: ["block", "content"],
+      },
+    },
+    {
+      name: "update_memory",
+      description: "Update a specific memory by its ID.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          id: { type: "string", description: "Memory ID (hex)" },
           content: { type: "string", description: "New content for this memory" },
         },
         required: ["id", "content"],
@@ -117,7 +141,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       inputSchema: {
         type: "object",
         properties: {
-          id: { type: "string", description: "Memory ID (8-char hex)" },
+          id: { type: "string", description: "Memory ID (hex)" },
         },
         required: ["id"],
       },
@@ -131,10 +155,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   try {
     switch (name) {
       case "add_memory": {
-        const { content, category } = z
-          .object({ content: z.string(), category: z.string().optional() })
-          .parse(args);
-        const result = await addMemory(storage, arch, content, category);
+        const { content } = z.object({ content: z.string() }).parse(args);
+        const result = await addMemory(storage, arch, content);
         return { content: [{ type: "text", text: result }] };
       }
 
@@ -144,8 +166,21 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return { content: [{ type: "text", text: result }] };
       }
 
-      case "get_all_memories": {
-        const result = await getAllMemories(storage, arch);
+      case "get_recent_memories": {
+        const { limit } = z.object({ limit: z.number().optional() }).parse(args);
+        const result = await getRecentMemories(storage, arch, limit ?? 128);
+        return { content: [{ type: "text", text: result }] };
+      }
+
+      case "read_block": {
+        const { block } = z.object({ block: z.string() }).parse(args);
+        const result = await readBlock(storage, block);
+        return { content: [{ type: "text", text: result }] };
+      }
+
+      case "write_block": {
+        const { block, content } = z.object({ block: z.string(), content: z.string() }).parse(args);
+        const result = await writeBlock(storage, block, content);
         return { content: [{ type: "text", text: result }] };
       }
 

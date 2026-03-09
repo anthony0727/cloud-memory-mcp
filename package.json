@@ -1,6 +1,6 @@
 {
   "name": "cloud-memory-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Agent-agnostic persistent memory for AI assistants, backed by your own Google Drive",
   "type": "module",
   "main": "./dist/server.js",

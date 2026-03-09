@@ -9,16 +9,16 @@ function withLock<T>(fn: () => Promise<T>): Promise<T> {
   return p;
 }
 
-const CATEGORY_RE = /[^a-zA-Z0-9_-]/g;
-function sanitizeCategory(cat: string): string {
-  return cat.replace(CATEGORY_RE, "_");
-}
+const BLOCKS: Record<string, string> = {
+  profile: "profile.md",
+  preferences: "preferences.md",
+  context: "context.md",
+};
 
 export async function addMemory(
   storage: StorageAdapter,
   arch: MemoryArchitecture,
   content: string,
-  category?: string
 ): Promise<string> {
   return withLock(async () => {
     const existing = await arch.load(storage);
@@ -30,13 +30,13 @@ export async function addMemory(
     const memory: Memory = {
       id: newId(),
       content,
-      category: sanitizeCategory(category ?? "general"),
+      category: "general",
       created_at: today(),
     };
 
     existing.push(memory);
     await arch.save(storage, existing);
-    return `ADD: [${memory.id}] [${memory.category}] ${memory.content}`;
+    return `ADD: [${memory.id}] ${memory.content}`;
   });
 }
 
@@ -50,7 +50,7 @@ export async function searchMemories(
 
   const terms = query.toLowerCase().split(/\s+/);
   const scored = memories.map((m) => {
-    const text = `${m.content} ${m.category}`.toLowerCase();
+    const text = m.content.toLowerCase();
     const score = terms.filter((t) => text.includes(t)).length;
     return { ...m, score };
   });
@@ -58,14 +58,35 @@ export async function searchMemories(
   const results = scored.filter((m) => m.score > 0).sort((a, b) => b.score - a.score);
   if (results.length === 0) return `No memories matching "${query}".`;
 
-  return results.map((m) => `[${m.id}] [${m.category}] ${m.content}`).join("\n");
+  return results.map((m) => `[${m.id}] [${m.created_at}] ${m.content}`).join("\n");
 }
 
-export async function getAllMemories(
+export async function getRecentMemories(
   storage: StorageAdapter,
-  arch: MemoryArchitecture
+  arch: MemoryArchitecture,
+  limit: number = 128
 ): Promise<string> {
-  return arch.loadRaw(storage);
+  return arch.loadRecent(storage, limit);
+}
+
+export async function readBlock(
+  storage: StorageAdapter,
+  block: string,
+): Promise<string> {
+  const file = BLOCKS[block];
+  if (!file) return `Unknown block: ${block}. Valid: ${Object.keys(BLOCKS).join(", ")}`;
+  return (await storage.read(file)) ?? `No ${block} yet.`;
+}
+
+export async function writeBlock(
+  storage: StorageAdapter,
+  block: string,
+  content: string,
+): Promise<string> {
+  const file = BLOCKS[block];
+  if (!file) return `Unknown block: ${block}. Valid: ${Object.keys(BLOCKS).join(", ")}`;
+  await storage.write(file, content);
+  return `${block} updated.`;
 }
 
 export async function updateMemory(

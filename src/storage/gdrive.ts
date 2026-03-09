@@ -297,6 +297,15 @@ export class GDriveAdapter implements StorageAdapter {
     }
   }
 
+  async delete(path: string): Promise<void> {
+    await this.init();
+    const fileId = await this.findFile(path);
+    if (fileId) {
+      await this.drive!.files.delete({ fileId });
+      this.fileIdCache.delete(path);
+    }
+  }
+
   async exists(path: string): Promise<boolean> {
     return (await this.findFile(path)) !== null;
   }

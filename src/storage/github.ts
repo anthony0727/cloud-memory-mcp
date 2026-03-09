@@ -77,6 +77,18 @@ export class GitHubAdapter implements StorageAdapter {
     if (data.content?.sha) this.shaCache.set(path, data.content.sha);
   }
 
+  async delete(path: string): Promise<void> {
+    const owner = await this.getOwner();
+    await this.ensureRepo();
+    try {
+      const { data } = await this.octokit.repos.getContent({ owner, repo: REPO_NAME, path });
+      if ("sha" in data) {
+        await this.octokit.repos.deleteFile({ owner, repo: REPO_NAME, path, message: `delete ${path}`, sha: data.sha });
+        this.shaCache.delete(path);
+      }
+    } catch {}
+  }
+
   async exists(path: string): Promise<boolean> {
     const owner = await this.getOwner();
     await this.ensureRepo();

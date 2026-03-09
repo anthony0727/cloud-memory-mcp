@@ -6,4 +6,5 @@ export interface MemoryArchitecture {
   load(storage: StorageAdapter): Promise<Memory[]>;
   save(storage: StorageAdapter, memories: Memory[]): Promise<void>;
   loadRaw(storage: StorageAdapter): Promise<string>;
+  loadRecent(storage: StorageAdapter, limit: number): Promise<string>;
 }

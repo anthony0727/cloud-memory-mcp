@@ -9,7 +9,7 @@ Any AI that supports MCP can connect — Claude, GPT, Gemini, whatever comes nex
 **Step 1: Authenticate with Google Drive (one-time)**
 
 ```bash
-npx cloud-memory-mcp --install
+npx cloud-memory-mcp@latest --install
 ```
 
 Opens browser → Google login → grant Drive access → done.
@@ -82,25 +82,29 @@ Works out of the box. First run opens browser for Google login. Token saved loca
 
 Set `GITHUB_TOKEN` and `CLOUD_MEMORY_BACKEND=github`. Auto-creates a private repo `my-ai-memory`.
 
-## Memory Architecture
+## Memory Structure
 
-A single `memories.md` file, chronologically ordered:
+Each memory is an individual file in your Google Drive:
 
-```markdown
-- [2026-01-15] [a1b2c3d4e5f6] Works at Acme Corp as Software Engineer
-- [2026-02-03] [e5f6a7b8c9d0] Prefers concise responses
-- [2026-03-09] [c9d0e1f2a3b4] Started learning Rust
+```
+Cloud Memory/
+  profile.md                                        ← stable identity info
+  2026-01-15_a1b2c3d4e5f6_works-at-acme-corp.md    ← individual memory
+  2026-02-03_e5f6a7b8c9d0_prefers-dark-mode.md
+  2026-03-09_c9d0e1f2a3b4_started-learning-rust.md
 ```
 
-The architecture layer is pluggable — future versions will support hierarchical memory structures inspired by [human memory research](https://www.nature.com/articles/s41562-025-02324-0).
+Browse, edit, or delete memories directly in Google Drive. `profile.md` holds stable facts (name, job, preferences) — the AI updates it as it learns about you.
 
 ## MCP Tools
 
 | Tool | Description |
 |------|-------------|
-| `add_memory` | Store a fact. Deduplicates automatically. |
+| `add_memory` | Store a memory. Deduplicates automatically. |
 | `search_memories` | Keyword search across all memories. |
-| `get_all_memories` | Load full memory context. |
+| `get_recent_memories` | Load the most recent memories (default 128). |
+| `get_profile` | Read the user's profile. |
+| `update_profile` | Update the user's profile. |
 | `update_memory` | Edit a memory by ID. |
 | `delete_memory` | Remove a memory by ID. |
 

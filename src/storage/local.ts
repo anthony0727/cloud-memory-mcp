@@ -1,4 +1,4 @@
-import { readFile, writeFile, mkdir, readdir, access } from "node:fs/promises";
+import { readFile, writeFile, mkdir, readdir, access, unlink } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { homedir } from "node:os";
 import type { StorageAdapter } from "./base.js";
@@ -26,6 +26,10 @@ export class LocalAdapter implements StorageAdapter {
     const full = this.resolve(path);
     await mkdir(dirname(full), { recursive: true });
     await writeFile(full, content, "utf-8");
+  }
+
+  async delete(path: string): Promise<void> {
+    try { await unlink(this.resolve(path)); } catch {}
   }
 
   async exists(path: string): Promise<boolean> {
