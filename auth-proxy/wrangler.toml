@@ -1,0 +1,7 @@
+name = "cloud-memory-auth"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+[vars]
+GOOGLE_CLIENT_ID = "1021779417415-k0qjga8p519c21bfqa03vsknbhhe8dp0.apps.googleusercontent.com"
+# GOOGLE_CLIENT_SECRET goes in `wrangler secret put GOOGLE_CLIENT_SECRET`

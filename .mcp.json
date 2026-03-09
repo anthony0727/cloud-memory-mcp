@@ -1,0 +1,13 @@
+{
+  "name": "cloud-memory",
+  "description": "Agent-agnostic persistent memory backed by Google Drive",
+  "command": "node",
+  "args": ["dist/server.js"],
+  "install": {
+    "steps": [
+      "npm install",
+      "npm run build",
+      "node dist/server.js --setup"
+    ]
+  }
+}
