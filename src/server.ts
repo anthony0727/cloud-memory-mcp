@@ -152,48 +152,49 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
+  const tag = `[${storageName}]`;
   try {
     switch (name) {
       case "add_memory": {
         const { content } = z.object({ content: z.string() }).parse(args);
         const result = await addMemory(storage, arch, content);
-        return { content: [{ type: "text", text: result }] };
+        return { content: [{ type: "text", text: `${tag} ${result}` }] };
       }
 
       case "search_memories": {
         const { query } = z.object({ query: z.string() }).parse(args);
         const result = await searchMemories(storage, arch, query);
-        return { content: [{ type: "text", text: result }] };
+        return { content: [{ type: "text", text: `${tag} ${result}` }] };
       }
 
       case "get_recent_memories": {
         const { limit } = z.object({ limit: z.number().optional() }).parse(args);
         const result = await getRecentMemories(storage, arch, limit ?? 128);
-        return { content: [{ type: "text", text: result }] };
+        return { content: [{ type: "text", text: `${tag} ${result}` }] };
       }
 
       case "read_block": {
         const { block } = z.object({ block: z.string() }).parse(args);
         const result = await readBlock(storage, block);
-        return { content: [{ type: "text", text: result }] };
+        return { content: [{ type: "text", text: `${tag} ${result}` }] };
       }
 
       case "write_block": {
         const { block, content } = z.object({ block: z.string(), content: z.string() }).parse(args);
         const result = await writeBlock(storage, block, content);
-        return { content: [{ type: "text", text: result }] };
+        return { content: [{ type: "text", text: `${tag} ${result}` }] };
       }
 
       case "update_memory": {
         const { id, content } = z.object({ id: z.string(), content: z.string() }).parse(args);
         const result = await updateMemory(storage, arch, id, content);
-        return { content: [{ type: "text", text: result }] };
+        return { content: [{ type: "text", text: `${tag} ${result}` }] };
       }
 
       case "delete_memory": {
         const { id } = z.object({ id: z.string() }).parse(args);
         const result = await deleteMemory(storage, arch, id);
-        return { content: [{ type: "text", text: result }] };
+        return { content: [{ type: "text", text: `${tag} ${result}` }] };
       }
 
       default:
@@ -232,16 +233,48 @@ if (process.argv.includes("--uninstall")) {
 // --install mode: register MCP + trigger OAuth and exit
 if (process.argv.includes("--install")) {
   (async () => {
+    const { createInterface } = await import("node:readline");
+    const { readFile: rf, writeFile: wf, mkdir: mk } = await import("node:fs/promises");
+
     // trigger OAuth
     console.error("Authenticating with Google Drive...");
     try {
-      await storage.read("memories.md");
-      console.error("Install complete! Google Drive connected. Restart your AI client.");
-      process.exit(0);
+      await storage.read("__ping__");
+      console.error("Google Drive connected.");
     } catch (e) {
       console.error("Setup failed:", e instanceof Error ? e.message : e);
       process.exit(1);
     }
+
+    // ask about Claude Code memory override
+    const rl = createInterface({ input: process.stdin, output: process.stderr });
+    const ask = (q: string): Promise<string> => new Promise((r) => rl.question(q, r));
+
+    const answer = await ask("\nReplace Claude Code's local memory with cloud-memory? (Y/n) ");
+    if (answer.trim().toLowerCase() !== "n") {
+      // disable auto memory in settings.json
+      const settingsPath = join(homedir(), ".claude", "settings.json");
+      try {
+        const settings = JSON.parse(await rf(settingsPath, "utf-8").catch(() => "{}"));
+        settings.autoMemoryEnabled = false;
+        await mk(join(homedir(), ".claude"), { recursive: true });
+        await wf(settingsPath, JSON.stringify(settings, null, 2), "utf-8");
+        console.error("Disabled Claude Code local auto-memory.");
+      } catch {}
+
+      // add cloud-memory instructions to CLAUDE.md
+      const claudeMdPath = join(homedir(), ".claude", "CLAUDE.md");
+      const existing = await rf(claudeMdPath, "utf-8").catch(() => "");
+      if (!existing.includes("cloud-memory")) {
+        const instruction = `\n- Use cloud-memory MCP tools for all memory. At conversation start: read_block("profile") + get_recent_memories. Store facts with add_memory, update blocks with write_block.\n`;
+        await wf(claudeMdPath, existing + instruction, "utf-8");
+        console.error("Added cloud-memory instruction to ~/.claude/CLAUDE.md");
+      }
+    }
+
+    rl.close();
+    console.error("\nInstall complete! Restart your AI client.");
+    process.exit(0);
   })();
 } else {
   const transport = new StdioServerTransport();
@@ -250,7 +283,7 @@ if (process.argv.includes("--install")) {
     // eagerly authenticate on startup so OAuth popup opens immediately
     if (storageName === "gdrive") {
       try {
-        await storage.read("memories.md");
+        await storage.list("");
         console.error("Google Drive connected.");
       } catch (e) {
         console.error("Google Drive auth failed:", e instanceof Error ? e.message : e);

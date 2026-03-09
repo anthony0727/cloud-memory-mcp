@@ -310,6 +310,17 @@ export class GDriveAdapter implements StorageAdapter {
     return (await this.findFile(path)) !== null;
   }
 
+  async search(query: string): Promise<string[]> {
+    await this.init();
+    const safeQuery = query.replace(/'/g, "\\'");
+    const res = await this.drive!.files.list({
+      q: `'${this.folderId}' in parents and trashed=false and fullText contains '${safeQuery}'`,
+      fields: "files(name)",
+      spaces: "drive",
+    });
+    return res.data.files?.map((f) => f.name!) ?? [];
+  }
+
   async list(_dir: string): Promise<string[]> {
     await this.init();
     const res = await this.drive!.files.list({

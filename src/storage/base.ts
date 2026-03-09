@@ -4,4 +4,5 @@ export interface StorageAdapter {
   delete(path: string): Promise<void>;
   exists(path: string): Promise<boolean>;
   list(dir: string): Promise<string[]>;
+  search?(query: string): Promise<string[]>; // returns matching filenames
 }

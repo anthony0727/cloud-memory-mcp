@@ -101,27 +101,38 @@ Browse, edit, or delete memories directly in Google Drive. `profile.md` holds st
 | Tool | Description |
 |------|-------------|
 | `add_memory` | Store a memory. Deduplicates automatically. |
-| `search_memories` | Keyword search across all memories. |
+| `search_memories` | Keyword search across all memories (uses Google Drive fullText search). |
 | `get_recent_memories` | Load the most recent memories (default 128). |
-| `get_profile` | Read the user's profile. |
-| `update_profile` | Update the user's profile. |
+| `read_block` | Read a memory block (`profile`, `preferences`, `context`). |
+| `write_block` | Update a memory block. |
 | `update_memory` | Edit a memory by ID. |
 | `delete_memory` | Remove a memory by ID. |
 
 The AI client (Claude, GPT, etc.) decides what to remember. The MCP server just stores and retrieves — no LLM calls, no API keys, no extra cost.
 
+## Activating Memory (Recommended)
+
+The MCP tools are available, but your AI won't use them unless instructed. Add a line to your agent's system prompt or instruction file:
+
+Add the following to your agent's instruction file (`CLAUDE.md`, `GEMINI.md`, etc.):
+
+```
+- Use cloud-memory MCP tools for all memory. At conversation start: read_block("profile") + get_recent_memories. Store facts with add_memory, update blocks with write_block.
+```
+
+Running `npx cloud-memory-mcp@latest --install` will prompt to do this automatically for Claude Code (disables local auto-memory in `~/.claude/settings.json` + adds the instruction to `~/.claude/CLAUDE.md`).
+
 ## How It Works
 
-1. AI extracts facts from your conversation
-2. AI calls `add_memory` with each fact
-3. MCP server deduplicates and stores as Markdown in your Google Drive
-4. Next conversation, AI calls `get_all_memories` to reload your context
+1. AI reads `profile` block + recent memories at conversation start
+2. During conversation, AI stores new facts via `add_memory` or updates blocks
+3. Each memory becomes an individual file in your Google Drive
+4. Next conversation — same context, any AI client, any machine
 
 No vector DB. No embedding models. No infra. Just Markdown files in cloud storage you already own.
 
 ## Roadmap
 
-- Hierarchical memory architecture (profile/episodic/preferences layers, inspired by [Nature paper](https://www.nature.com/articles/s41562-025-02324-0))
 - Local cache layer for faster reads
 - iCloud storage adapter
 - Import from existing sources (CLAUDE.md, ChatGPT export)

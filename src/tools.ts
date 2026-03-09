@@ -45,6 +45,26 @@ export async function searchMemories(
   arch: MemoryArchitecture,
   query: string
 ): Promise<string> {
+  // use Drive fullText search if available
+  if (storage.search) {
+    const files = await storage.search(query);
+    if (files.length === 0) return `No memories matching "${query}".`;
+    const results: string[] = [];
+    for (const file of files) {
+      const content = await storage.read(file);
+      if (content?.trim()) {
+        const dateMatch = file.match(/^(\d{4}-\d{2}-\d{2})_([a-f0-9]{8,12})_/);
+        if (dateMatch) {
+          results.push(`[${dateMatch[2]}] [${dateMatch[1]}] ${content.trim()}`);
+        } else {
+          results.push(`[${file}] ${content.trim().slice(0, 100)}`);
+        }
+      }
+    }
+    return results.length > 0 ? results.join("\n") : `No memories matching "${query}".`;
+  }
+
+  // fallback: in-memory keyword search
   const memories = await arch.load(storage);
   if (memories.length === 0) return "No memories stored yet.";
 
