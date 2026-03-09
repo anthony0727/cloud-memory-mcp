@@ -68,26 +68,15 @@ Set `GITHUB_TOKEN` and `CLOUD_MEMORY_BACKEND=github`. Auto-creates a private rep
 
 ## Memory Architecture
 
-Default is flat — a single `memories.md` with category headers:
+A single `memories.md` file, chronologically ordered:
 
 ```markdown
-# memories.md
-
-## work
-- [2026-01-01] [a1b2c3d4e5f6] Works at Acme Corp as Software Engineer
-
-## preferences
-- [2026-01-01] [e5f6a7b8c9d0] Prefers concise responses
+- [2026-01-15] [a1b2c3d4e5f6] Works at Acme Corp as Software Engineer
+- [2026-02-03] [e5f6a7b8c9d0] Prefers concise responses
+- [2026-03-09] [c9d0e1f2a3b4] Started learning Rust
 ```
 
-### Custom Architectures
-
-Set `CLOUD_MEMORY_ARCH` env var:
-
-- **`flat`** (default) — Single file, category headers
-- **`temporal`** — Monthly files (`2026-03.md`, `2026-04.md`)
-- **`categorical`** — Separate files per category (`work.md`, `preferences.md`)
-- **`hierarchical`** — Profile + episodic + semantic layers, inspired by [human memory research](https://www.nature.com/articles/s41562-025-02324-0)
+The architecture layer is pluggable — future versions will support hierarchical memory structures inspired by [human memory research](https://www.nature.com/articles/s41562-025-02324-0).
 
 ## MCP Tools
 
@@ -112,6 +101,8 @@ No vector DB. No embedding models. No infra. Just Markdown files in cloud storag
 
 ## Roadmap
 
+- Hierarchical memory architecture (profile/episodic/preferences layers, inspired by [Nature paper](https://www.nature.com/articles/s41562-025-02324-0))
+- Local cache layer for faster reads
 - iCloud storage adapter
 - Import from existing sources (CLAUDE.md, ChatGPT export)
 
