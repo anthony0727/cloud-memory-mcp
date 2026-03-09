@@ -5,7 +5,7 @@
   "type": "module",
   "main": "./dist/server.js",
   "bin": {
-    "cloud-memory-mcp": "./dist/server.js"
+    "cloud-memory-mcp": "dist/server.js"
   },
   "files": [
     "dist/",

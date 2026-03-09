@@ -187,13 +187,8 @@ if (process.argv.includes("--uninstall")) {
         cleaned = true;
       }
     }
-    // remove MCP from claude config
-    try {
-      const { execSync } = await import("node:child_process");
-      execSync("claude mcp remove cloud-memory -s user", { stdio: "inherit" });
-      console.error("Removed cloud-memory from Claude MCP config.");
-      cleaned = true;
-    } catch {}
+    // MCP registration removal is manual — each AI client has different commands
+    console.error("Remove the MCP registration from your AI client manually if needed.");
     console.error(cleaned ? "Uninstall complete." : "Nothing to clean up.");
     console.error("Your memories in Google Drive are untouched — delete the 'Cloud Memory' folder manually if desired.");
     process.exit(0);
@@ -202,15 +197,6 @@ if (process.argv.includes("--uninstall")) {
 // --install mode: register MCP + trigger OAuth and exit
 if (process.argv.includes("--install")) {
   (async () => {
-    // register MCP in claude config
-    try {
-      const { execSync } = await import("node:child_process");
-      execSync("claude mcp add cloud-memory -s user -- npx -y cloud-memory-mcp", { stdio: "inherit" });
-      console.error("Registered cloud-memory MCP.");
-    } catch {
-      console.error("Could not auto-register MCP (claude CLI not found). Add manually:");
-      console.error("  claude mcp add cloud-memory -s user -- npx -y cloud-memory-mcp");
-    }
     // trigger OAuth
     console.error("Authenticating with Google Drive...");
     try {

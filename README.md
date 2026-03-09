@@ -6,11 +6,27 @@ Any AI that supports MCP can connect — Claude, GPT, Gemini, whatever comes nex
 
 ## Install
 
+**Step 1: Authenticate with Google Drive (one-time)**
+
 ```bash
 npx cloud-memory-mcp --install
 ```
 
-Registers the MCP server, opens browser for Google login → grant Drive access → done. Restart your AI client.
+Opens browser → Google login → grant Drive access → done.
+
+**Step 2: Register in your AI client**
+
+```bash
+# Claude Code
+claude mcp add cloud-memory -s user -- npx -y cloud-memory-mcp
+
+# Gemini CLI
+gemini mcp add -s user cloud-memory npx -y cloud-memory-mcp
+
+# Any MCP client: use stdio transport with command "npx -y cloud-memory-mcp"
+```
+
+Restart your AI client. Memory tools are live.
 
 ## Uninstall
 
