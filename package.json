@@ -34,7 +34,7 @@
   "author": "jwseok0727",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jwseok0727/cloud-memory-mcp"
+    "url": "https://github.com/anthony0727/cloud-memory-mcp"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
